@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 import morgan from "morgan";
 import authRoutes from './src/Routes/authRoutes.js';
 import adminRoutes from './src/Routes/adminRoutes.js';
+import departmentRoutes from './src/Routes/departmentRoutes.js';
+import complaintRoutes from './src/Routes/complaintRoutes.js';
 import { 
   apiLimiter, 
   sanitizeData, 
@@ -56,6 +58,12 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve uploaded files (cross-origin allowed for images)
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+  next()
+}, express.static('uploads'));
+
 // Security middleware
 app.use(hideEndpoints);
 app.use(requestLogger);
@@ -83,6 +91,8 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/complaints', complaintRoutes);
 
 // 404 handler
 app.use((req, res) => {

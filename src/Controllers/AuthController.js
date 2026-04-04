@@ -332,8 +332,15 @@ export const refreshToken = async (req, res) => {
       });
     }
     
-    // Find user and verify refresh token matches
-    const user = await User.findById(decoded.id).select('+refreshToken');
+    // Try User first, then Admin
+    let user = await User.findById(decoded.id).select('+refreshToken');
+    let role = user?.role;
+
+    if (!user) {
+      const Admin = (await import('../Models/AdminModel.js')).default;
+      user = await Admin.findById(decoded.id).select('+refreshToken');
+      role = user?.role;
+    }
     
     if (!user || user.refreshToken !== refreshToken) {
       return res.status(401).json({
@@ -343,7 +350,7 @@ export const refreshToken = async (req, res) => {
     }
     
     // Generate new access token
-    const newAccessToken = generateAccessToken(user._id, user.role);
+    const newAccessToken = generateAccessToken(user._id, role);
     
     res.status(200).json({
       success: true,
@@ -406,6 +413,22 @@ export const getMe = async (req, res) => {
   }
 };
 
+// @desc    Delete a user (Admin only)
+// @route   DELETE /api/auth/users/:id
+// @access  Private/Admin
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.status(200).json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete user' });
+  }
+};
+
 // @desc    Get all users (Admin only)
 // @route   GET /api/auth/users
 // @access  Private/Admin
@@ -427,5 +450,25 @@ export const getAllUsers = async (req, res) => {
       success: false,
       message: 'Failed to fetch users'
     });
+  }
+};
+
+// @desc    Update user profile (name, address)
+// @route   PUT /api/auth/me
+// @access  Private
+export const updateMe = async (req, res) => {
+  try {
+    const { name, address } = req.body;
+    const updates = {};
+    if (name && name.trim()) updates.name = name.trim();
+    if (address && address.trim()) updates.address = address.trim();
+
+    const userId = req.user.id || req.user._id;
+    const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+    if (!user) return res.status(404).json({ success: false, message: `User not found (id: ${userId})` });
+
+    res.status(200).json({ success: true, message: 'Profile updated', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
   }
 };

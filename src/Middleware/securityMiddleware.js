@@ -5,12 +5,9 @@ import hpp from 'hpp';
 
 // Rate limiter for authentication routes
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
-  message: {
-    success: false,
-    message: 'Too many authentication attempts. Please try again after 15 minutes.'
-  },
+  windowMs: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 5 : 100,
+  message: { success: false, message: 'Too many authentication attempts. Please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false
@@ -18,12 +15,9 @@ export const authLimiter = rateLimit({
 
 // Rate limiter for OTP requests
 export const otpLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3, // 3 OTP requests per window
-  message: {
-    success: false,
-    message: 'Too many OTP requests. Please try again after 15 minutes.'
-  },
+  windowMs: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 3 : 50,
+  message: { success: false, message: 'Too many OTP requests. Please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false
 });
