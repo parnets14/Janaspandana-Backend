@@ -9,7 +9,6 @@ import adminRoutes from './src/Routes/adminRoutes.js';
 import departmentRoutes from './src/Routes/departmentRoutes.js';
 import complaintRoutes from './src/Routes/complaintRoutes.js';
 import { 
-  apiLimiter, 
   sanitizeData, 
   preventXSS, 
   preventHPP, 
@@ -38,6 +37,9 @@ app.use(helmet({
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
+  },
+  permissionsPolicy: {
+    unload: []
   }
 }));
 
@@ -75,9 +77,6 @@ app.use(preventHPP);
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
-
-// Rate limiting
-app.use('/api/', apiLimiter);
 
 // Health check route
 app.get('/health', (req, res) => {

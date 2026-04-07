@@ -8,7 +8,8 @@ const complaintSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false,
+    default: null
   },
   department: {
     type: String,
@@ -34,7 +35,20 @@ const complaintSchema = new mongoose.Schema({
     lat: { type: Number, default: null },
     lng: { type: Number, default: null }
   },
-  proofFiles: [{ type: String }], // file URLs/paths
+  proofFiles: [{ type: String }], // file URLs/paths (citizen attachments)
+  officerAttachments: [{ type: String }], // officer uploaded photos
+  adminAttachments: [{ type: String }], // admin uploaded photos
+  adminStatus: {
+    type: String,
+    enum: ['Awaiting Review', 'Complaint Registered', 'Assigned to Field Officer'],
+    default: 'Awaiting Review'
+  },
+  officerNotes: [{
+    note: { type: String },
+    status: { type: String },
+    uploadedBy: { type: String }, // Officer or Admin name
+    uploadedAt: { type: Date, default: Date.now }
+  }],
   status: {
     type: String,
     enum: ['Awaiting Review', 'Complaint Registered', 'Assigned to Field Officer', 'Inspection Completed', 'Work in Progress', 'Issue Resolved', 'Rejected'],

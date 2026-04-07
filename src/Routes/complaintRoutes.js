@@ -10,14 +10,13 @@ import {
   reopenComplaint,
   getOfficerComplaints,
 } from '../Controllers/ComplaintController.js';
-import { protect, restrictTo } from '../Middleware/authMiddleware.js';
 import { upload } from '../Middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
 router.post('/', submitComplaint);
 router.get('/my', getMyComplaints);
-router.get('/officer', protect, restrictTo('officer'), getOfficerComplaints);
+router.get('/officer', getOfficerComplaints);
 router.get('/', getAllComplaints);
 router.get('/:id', getComplaint);
 router.patch('/:id/status', updateComplaintStatus);
