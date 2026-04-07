@@ -7,7 +7,7 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '.
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, phone, aadhaar, address, photo, aadhaarPhoto } = req.body;
+    const { name, phone, aadhaar, address, pincode, photo, aadhaarPhoto } = req.body;
     
     // Validate phone
     if (!validatePhone(phone)) {
@@ -60,6 +60,7 @@ export const register = async (req, res) => {
       phone,
       aadhaar,
       address,
+      pincode,
       photo,
       aadhaarPhoto,
       role: 'citizen'

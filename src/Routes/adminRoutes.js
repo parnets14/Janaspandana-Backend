@@ -4,23 +4,33 @@ import {
   loginAdmin,
   refreshAdminToken,
   logoutAdmin,
-  getAdminProfile
+  getAdminProfile,
+  createOfficer,
+  getOfficers,
+  deleteOfficer,
+  updateOfficer,
+  loginOfficer,
+  refreshOfficerToken,
 } from '../Controllers/AdminController.js';
 import { getAllUsers, deleteUser } from '../Controllers/AuthController.js';
-import { protect, restrictTo } from '../Middleware/authMiddleware.js';
 import { authLimiter } from '../Middleware/securityMiddleware.js';
 
 const router = express.Router();
 
-// Public routes with rate limiting
 router.post('/register', authLimiter, registerAdmin);
 router.post('/login', authLimiter, loginAdmin);
 router.post('/refresh-token', refreshAdminToken);
+router.post('/officer-login', authLimiter, loginOfficer);
+router.post('/officer-refresh-token', refreshOfficerToken);
 
-// Protected routes (admin only)
-router.post('/logout', protect, restrictTo('admin'), logoutAdmin);
-router.get('/me', protect, restrictTo('admin'), getAdminProfile);
-router.get('/users', protect, restrictTo('admin'), getAllUsers);
-router.delete('/users/:id', protect, restrictTo('admin'), deleteUser);
+router.post('/logout', logoutAdmin);
+router.get('/me', getAdminProfile);
+router.get('/users', getAllUsers);
+router.delete('/users/:id', deleteUser);
+
+router.post('/officers', createOfficer);
+router.get('/officers', getOfficers);
+router.patch('/officers/:id', updateOfficer);
+router.delete('/officers/:id', deleteOfficer);
 
 export default router;

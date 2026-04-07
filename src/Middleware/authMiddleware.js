@@ -1,6 +1,7 @@
 import { verifyAccessToken } from '../Utils/jwtUtils.js';
 import User from '../Models/UserModel.js';
 import Admin from '../Models/AdminModel.js';
+import Officer from '../Models/OfficerModel.js';
 
 // Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
@@ -30,11 +31,13 @@ export const protect = async (req, res, next) => {
       });
     }
     
-    // Check if it's an admin or user based on role in token
+    // Check if it's an admin, officer, or user based on role in token
     let user;
     
     if (decoded.role === 'admin') {
       user = await Admin.findById(decoded.id).select('-password -refreshToken');
+    } else if (decoded.role === 'officer') {
+      user = await Officer.findById(decoded.id).select('-password -refreshToken').populate('department', 'name');
     } else {
       user = await User.findById(decoded.id).select('-otp -otpExpire -refreshToken');
     }

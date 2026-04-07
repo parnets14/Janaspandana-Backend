@@ -6,17 +6,13 @@ import {
   updateDepartment,
   deleteDepartment
 } from '../Controllers/DepartmentController.js';
-import { protect, restrictTo } from '../Middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Public - used by submit complaint page
 router.get('/', getDepartments);
-
-// Admin only
-router.get('/all', protect, restrictTo('admin'), getAllDepartments);
-router.post('/', protect, restrictTo('admin'), createDepartment);
-router.put('/:id', protect, restrictTo('admin'), updateDepartment);
-router.delete('/:id', protect, restrictTo('admin'), deleteDepartment);
+router.get('/all', getAllDepartments);
+router.post('/', createDepartment);
+router.put('/:id', updateDepartment);
+router.delete('/:id', deleteDepartment);
 
 export default router;

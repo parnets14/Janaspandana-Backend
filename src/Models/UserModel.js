@@ -28,9 +28,14 @@ const userSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    required: [true, 'Address is required'],
+    required: [false, 'Address is required'],
     trim: true,
     maxlength: [500, 'Address cannot exceed 500 characters']
+  },
+  pincode: {
+    type: String,
+    trim: true,
+    match: [/^\d{6}$/, 'Pincode must be 6 digits']
   },
   photo: {
     type: String,

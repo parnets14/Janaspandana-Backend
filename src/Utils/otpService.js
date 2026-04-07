@@ -70,7 +70,7 @@ const otpRequestTracker = new Map();
 export const checkOTPRateLimit = (phone) => {
   const now = Date.now();
   const key = phone;
-  const limit = 3; // Max 3 OTP requests
+  const limit = 10; // Max 3 OTP requests
   const window = 15 * 60 * 1000; // 15 minutes
   
   if (!otpRequestTracker.has(key)) {

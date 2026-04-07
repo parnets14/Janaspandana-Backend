@@ -29,6 +29,8 @@ const complaintSchema = new mongoose.Schema({
   },
   location: {
     address: { type: String, default: '' },
+    city: { type: String, default: '' },
+    ward: { type: String, default: '' },
     lat: { type: Number, default: null },
     lng: { type: Number, default: null }
   },

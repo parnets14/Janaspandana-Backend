@@ -223,44 +223,169 @@ export const refreshAdminToken = async (req, res) => {
 
 // @desc    Logout admin
 // @route   POST /api/admin/logout
-// @access  Private
+// @access  Public
 export const logoutAdmin = async (req, res) => {
-  try {
-    // Clear refresh token
-    req.user.refreshToken = undefined;
-    await req.user.save({ validateBeforeSave: false });
-    
-    res.status(200).json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-    
-  } catch (error) {
-    console.error('Admin logout error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Logout failed'
-    });
-  }
+  res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
 // @desc    Get current admin
 // @route   GET /api/admin/me
-// @access  Private
+// @access  Public
 export const getAdminProfile = async (req, res) => {
+  res.status(200).json({ success: true, data: {} });
+};
+
+import Officer from '../Models/OfficerModel.js';
+import Department from '../Models/DepartmentModel.js';
+
+// @desc    Create officer (admin only)
+// @route   POST /api/admin/officers
+// @access  Private/Admin
+export const createOfficer = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.id);
-    
+    const { name, email, password, departmentId, phone } = req.body;
+
+    if (!name || !email || !password || !departmentId) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ success: false, message: 'Department not found' });
+    }
+
+    const existing = await Officer.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Email already registered' });
+    }
+
+    const officer = await Officer.create({ name, email, password, phone, department: departmentId });
+
+    res.status(201).json({
+      success: true,
+      message: 'Officer created successfully',
+      data: { id: officer._id, name: officer.name, email: officer.email, department: dept.name },
+    });
+  } catch (error) {
+    console.error('Create officer error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create officer' });
+  }
+};
+
+// @desc    Get all officers
+// @route   GET /api/admin/officers
+// @access  Private/Admin
+export const getOfficers = async (req, res) => {
+  try {
+    const officers = await Officer.find().populate('department', 'name icon').sort('-createdAt');
+    res.status(200).json({ success: true, data: officers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch officers' });
+  }
+};
+
+// @desc    Update officer
+// @route   PATCH /api/admin/officers/:id
+export const updateOfficer = async (req, res) => {
+  try {
+    const { name, email, phone, departmentId } = req.body;
+    const updates = {};
+    if (name) updates.name = name;
+    if (email) updates.email = email;
+    if (phone) updates.phone = phone;
+    if (departmentId) updates.department = departmentId;
+
+    const officer = await Officer.findByIdAndUpdate(req.params.id, updates, { new: true }).populate('department', 'name icon');
+    if (!officer) return res.status(404).json({ success: false, message: 'Officer not found' });
+
+    res.status(200).json({ success: true, message: 'Officer updated', data: officer });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update officer' });
+  }
+};
+
+// @desc    Delete officer
+// @route   DELETE /api/admin/officers/:id
+// @access  Private/Admin
+export const deleteOfficer = async (req, res) => {
+  try {
+    await Officer.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: 'Officer deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to delete officer' });
+  }
+};
+
+// @desc    Officer login
+// @route   POST /api/admin/officer-login
+// @access  Public
+export const loginOfficer = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    const officer = await Officer.findOne({ email }).select('+password +refreshToken');
+    if (!officer) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (!officer.isActive) {
+      return res.status(403).json({ success: false, message: 'Account deactivated. Contact admin.' });
+    }
+
+    const isValid = await officer.comparePassword(password);
+    if (!isValid) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    const accessToken = generateAccessToken(officer._id, 'officer');
+    const refreshToken = generateRefreshToken(officer._id);
+
+    officer.refreshToken = refreshToken;
+    await officer.save({ validateBeforeSave: false });
+
+    const officerData = await Officer.findById(officer._id).populate('department', 'name icon');
+
     res.status(200).json({
       success: true,
-      data: admin
+      message: 'Login successful',
+      data: { officer: officerData, accessToken, refreshToken },
     });
-    
   } catch (error) {
-    console.error('Get admin profile error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch admin data'
+    console.error('Officer login error:', error);
+    res.status(500).json({ success: false, message: 'Login failed' });
+  }
+};
+
+// @desc    Refresh officer access token
+// @route   POST /api/admin/officer-refresh-token
+// @access  Public
+export const refreshOfficerToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ success: false, message: 'Refresh token is required' });
+    }
+
+    const decoded = verifyRefreshToken(refreshToken);
+    if (!decoded) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired refresh token' });
+    }
+
+    const officer = await Officer.findById(decoded.id).select('+refreshToken');
+    if (!officer || officer.refreshToken !== refreshToken) {
+      return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+    }
+
+    const newAccessToken = generateAccessToken(officer._id, 'officer');
+    res.status(200).json({
+      success: true,
+      data: { accessToken: newAccessToken },
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to refresh token' });
   }
 };
