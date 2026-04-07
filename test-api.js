@@ -1,7 +1,7 @@
 // Quick API test script
 const testPhone = '9876543210';
 const testAadhaar = '123456789012';
-const API_URL = 'http://localhost:5001';
+const API_URL = 'https://janaspandana-backend.onrender.com';
 
 async function testAPI() {
   console.log('🧪 Testing JanaSpandana API...\n');
