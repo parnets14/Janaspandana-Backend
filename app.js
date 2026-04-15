@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import mongoose from "mongoose";
 import morgan from "morgan";
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './src/Routes/authRoutes.js';
 import adminRoutes from './src/Routes/adminRoutes.js';
 import departmentRoutes from './src/Routes/departmentRoutes.js';
@@ -17,6 +19,13 @@ import {
 } from './src/Middleware/securityMiddleware.js';
  
 dotenv.config();
+
+// Configure Mongoose
+mongoose.set('strictQuery', false);
+
+// ES module __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
  
 const app = express();
 
@@ -47,7 +56,7 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://janaspandana.netlify.app',
+  'https://janoni.in',
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
 ];
 
@@ -105,12 +114,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/complaints', complaintRoutes);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+// Serve static files from the React app build directory
+app.use(express.static(join(__dirname, 'build'))); // Change 'build' to your frontend folder if needed
+
+// Redirect all requests to the index.html file
+app.get("*", (req, res) => {
+  return res.sendFile(join(__dirname, 'build', 'index.html'));
 });
 
 // Global error handler
